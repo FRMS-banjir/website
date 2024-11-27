@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flood Relief Management System</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+     <!-- Firebase SDK (compatibility version) -->
+     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+
+    <!-- Ensure the map has a set width and height -->
+    <style>
+        #map {
+            width: 100%;
+            height: 400px; /* Set a fixed height for the map */
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Header -->
+    <header>
+        <div class="logo">Flood Relief Management System</div>
+        <nav>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="analytics.html">Analytics</a></li>
+                <li><a href="locate-us.html">Locate Us</a></li>
+                <li><a href="info.html">Info</a></li>
+                <li><a href="hotline.html">Hotline</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Main Dashboard -->
+    <main>
+        <!-- Status Card -->
+        <section id="statusCard">
+            <div class="status-card">
+                <p id="waterLevelStatus">Loading...</p>  <!-- Water Level Status will be updated here -->
+            </div>
+        </section>
+
+        <!-- Water Level Dashboard Section -->
+        <section>
+            <h2>Water Level Dashboard</h2>
+            <canvas id="waterLevelChart"></canvas>
+        </section>
+
+        <!-- Interactive Map Section -->
+        <section>
+            <h2>Flood Map (MSU Shah Alam)</h2>
+            <div id="map"></div>
+        </section>
+
+        <!-- Leaflet Map Script -->
+        <script>
+            const map = L.map('map').setView([3.0779490927974478, 101.55290095517702], 17); // Adjusted coordinates and zoom level
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 18,
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+        
+            L.marker([3.0779490927974478, 101.55290095517702]).addTo(map)
+                .bindPopup('<b>MSU Shah Alam</b><br>Management & Science University, Seksyen 13, Shah Alam')
+                .openPopup();
+        </script>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <p>Contact Us | Follow us on <a href="#">Twitter</a> | <a href="#">Facebook</a></p>
+    </footer>
+
+    <!-- JavaScript for Water Level Chart -->
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDVhdJgRSHs5j_vKM3JWfPyCbkSLL2IrA8",
+            authDomain: "water-level-sensor-e0554.firebaseapp.com",
+            databaseURL: "https://water-level-sensor-e0554-default-rtdb.firebaseio.com",
+            projectId: "water-level-sensor-e0554",
+            storageBucket: "water-level-sensor-e0554.firebasestorage.app",
+            messagingSenderId: "588945994028",
+            appId: "1:588945994028:web:e01212cf86d9a35d47bc89",
+            measurementId: "G-W0JY8F8563"
+        };
+
+        // Initialize Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // Fetch water level data using GET method and plot with Plotly
+        function fetchAndPlotData() {
+            // Use Firebase's get method to retrieve data
+            const ref = db.ref("waterLevel/history").orderByKey().limitToLast(96);
+
+            ref.get().then((snapshot) => {
+                if (snapshot.exists()) {
+                const data = snapshot.val();
+                const timestamps = [];
+                const waterLevels = [];
+
+                // Convert the data object to an array of entries (key-value pairs)
+                    const dataEntries = Object.entries(data);  // This creates an array of [key, value] pairs
+
+                    // Slice the first 50 entries from the array (if there are at least 50)
+                    const slicedData = dataEntries.slice(-10);
+                    const currentWaterLevel = dataEntries.slice(-1)[0];
+
+                    // Loop through the sliced data and push the values to the timestamps and waterLevels arrays
+                    slicedData.forEach(([uniqueId, entry]) => {
+                        console.log(uniqueId);  // Log the unique ID
+                        timestamps.push(entry.timestamp);  // Push timestamp to the timestamps array
+                        waterLevels.push(entry.level);    // Push water level to the waterLevels array
+                    });
+
+                    const waterLevelData = {
+                        labels: timestamps,
+                        datasets: [{
+                            label: 'Water Threshold (cm)',
+                            data: waterLevels,
+                            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 2,
+                            fill: true
+                        }]
+                    };
+
+                    const config = {
+                        type: 'line',
+                        data: waterLevelData,
+                        options: {
+                            responsive: true,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Water Threshold (cm)'
+                                    },
+                                    min: 0,
+                                    max: 16,  // Set the maximum value of y-axis to 15
+                                    ticks: {
+                                        stepSize: 1, 
+                                    }
+                                },
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: 'Time'
+                                    }
+                                }
+                            }
+                        }
+                    };
+
+                    const ctx = document.getElementById('waterLevelChart').getContext('2d');
+                    const waterLevelChart = new Chart(ctx, config);
+
+                    updateWaterLevelStatus(currentWaterLevel[1].level)
+
+                } else {
+                    console.log("No data available");
+                }
+
+
+            }).catch((error) => {
+                console.error("Error fetching data: ", error);
+            });
+        }
+
+        // Function to update the water level status
+        function updateWaterLevelStatus(level) {
+            console.log(level)
+            const waterLevelStatusElement = document.getElementById('waterLevelStatus');
+            const cardStatus = document.getElementById('statusCard');
+
+            // Determine status based on water level
+            let status;
+            if (level < 5) {
+                status = "High";  // Water level is considered High
+                
+            } else if (level < 10) {
+                status = "Medium";  // Water level is considered Medium
+                waterLevelStatusElement.className = 'medium'; // Apply CSS for Medium status
+            } else {
+                status = "Low";  // Water level is considered Low
+                waterLevelStatusElement.className = 'low'; // Apply CSS for Low status
+            }
+
+            cardStatus.classList.add(status);  // Add the level class
+
+           // Set the text content with the status and level, applying the 'bold' class to the status
+            waterLevelStatusElement.innerHTML = `Your current water level threshold is <b>${status} (${level} cm) </b>`;
+        }
+
+        
+
+        // Fetch data and create the chart when the page loads
+        window.onload = fetchAndPlotData;
+    </script>
+
+    <style>
+        .status-card {
+            padding: 0.5rem;
+        }
+
+        .High {
+            background-color: #dc3545;
+        }
+
+        .Medium {
+            background-color: #ffc107;
+        }
+
+        .Low {
+            background-color: #28a745 ;
+        }
+    </style>
+
+</body>
+</html>

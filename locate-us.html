@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flood Relief Management System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Header and Navigation -->
+    <header>
+        <div class="logo">Flood Management</div>
+        <nav>
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="analytics.html">Analytics</a></li>
+                <li><a href="locate-us.html">Locate Us</a></li>
+                <li><a href="info.html">Info</a></li>
+                <li><a href="hotline.html">Hotline</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Main Dashboard -->
+    <main>
+        <!-- Locate Us Section with Form -->
+        <section class="locate-us-section">
+            <h2>Locate Us</h2>
+            <form id="locateUsForm">
+                <label for="name">Your Name:</label><br>
+                <input type="text" id="name" name="name" required><br><br>
+
+                <label for="number">Your Phone Number:</label><br>
+                <input type="text" id="number" name="number" required><br><br>
+
+                <label for="location">Your Location:</label><br>
+                <input type="text" id="location" name="location" required><br><br>
+
+                <button type="submit">Submit</button>
+            </form>
+
+            <!-- Thank You Message (Hidden Initially) -->
+            <p id="thankYouMessage" style="display: none; color: green; font-weight: bold;">Thank You! Your submission ticket is received.</p>
+
+            <!-- Error Message (Hidden Initially) -->
+            <p id="errorMessage" style="display: none; color: red; font-weight: bold;">Error: Please enter a valid phone number with numbers only.</p>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <p>Contact Us | Follow us on <a href="#">Twitter</a> | <a href="#">Facebook</a></p>
+    </footer>
+
+    <!-- JavaScript to handle form submission and validate phone number -->
+    <script>
+        // Get the form, thank you message, and error message elements
+        const locateUsForm = document.getElementById('locateUsForm');
+        const thankYouMessage = document.getElementById('thankYouMessage');
+        const errorMessage = document.getElementById('errorMessage');
+        const phoneNumberInput = document.getElementById('number');
+
+        // Add event listener for form submission
+        locateUsForm.addEventListener('submit', function(event) {
+            // Prevent the default form submission
+            event.preventDefault();
+
+            // Validate phone number (only digits allowed)
+            const phoneNumber = phoneNumberInput.value;
+            const phoneNumberRegex = /^[0-9]+$/; // Regex to allow only numbers
+
+            if (!phoneNumberRegex.test(phoneNumber)) {
+                // If the phone number contains non-numeric characters, show error message
+                errorMessage.style.display = 'block';
+                thankYouMessage.style.display = 'none'; // Hide thank you message if there's an error
+            } else {
+                // If valid, show thank you message and reset form
+                errorMessage.style.display = 'none'; // Hide error message
+                thankYouMessage.style.display = 'block';
+                locateUsForm.reset();
+            }
+        });
+    </script>
+
+</body>
+</html>
